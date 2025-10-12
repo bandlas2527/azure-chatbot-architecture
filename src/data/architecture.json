@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    { "id": "User", "label": "User / Chat UI" },
+    { "id": "APIM", "label": "API Gateway" },
+    { "id": "Function", "label": "Azure Function" },
+    { "id": "OpenAI", "label": "Azure OpenAI" },
+    { "id": "ADLS2", "label": "ADLS2 / Tenant Folders" }
+  ],
+  "edges": [
+    ["User", "APIM"],
+    ["APIM", "Function"],
+    ["Function", "OpenAI"],
+    ["Function", "ADLS2"]
+  ]
+}

@@ -1,177 +1,199 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Database,
-  Cloud,
-  FileText,
-  Lock,
-  Search,
-  Settings,
-  MessageSquare,
-  Globe,
-  Monitor,
-} from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  ShieldCheck,
+  Lock,
+  Database,
+  Cpu,
+  Cloud,
+  Send,
+  RefreshCcw,
+} from "lucide-react";
 
 export default function AzureMultiTenantChatbot() {
   return (
-    <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* 🟢 Client Website Widget Layer */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="lg:col-span-3"
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-green-50 to-green-100">
-          <CardContent className="p-5 text-center">
-            <Globe className="mx-auto mb-2 w-10 h-10 text-green-600" />
-            <h2 className="text-xl font-semibold">Client Website Widget</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Each client embeds a lightweight{" "}
-              <code>widget.js</code> script into their website. This script
-              injects a floating chat bubble that opens an iframe connected to
-              your hosted chatbot UI. The widget identifies the tenant through a
-              unique ID and allows visitors to interact directly with your AI
-              service in real time.
+    <div className="grid grid-cols-12 gap-4 p-6 text-sm">
+      {/* --- CLIENT LAYER --- */}
+      <div className="col-span-12">
+        <h2 className="text-lg font-semibold mb-2">Client Layer</h2>
+        <div className="flex flex-wrap gap-4">
+          <Card title="Customer Website">
+            <p>
+              Hosts <code>widget.js</code> script<br />
+              Origin: <span className="font-semibold">https://www.acme.com</span>
             </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+          </Card>
+          <Card title="Chat Widget (Browser)">
+            <ul className="list-disc ml-4">
+              <li>Calls <code>/getToken</code> endpoint via APIM</li>
+              <li>Performs reCAPTCHA + Fingerprint check</li>
+              <li>Uses short-lived JWT for chat calls</li>
+            </ul>
+          </Card>
+          <Arrow label="HTTPS" />
+          <Card title="Optional Tenant Auth Proxy" icon={<ShieldCheck />}>
+            <ul className="list-disc ml-4">
+              <li>Docker/Function app, easy to deploy</li>
+              <li>Signs & forwards chat securely</li>
+              <li>Stores tenant SP credentials privately</li>
+            </ul>
+          </Card>
+        </div>
+      </div>
 
-      {/* 🟠 Step 1: Document Upload */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-orange-50 to-orange-100">
-          <CardContent className="p-5 text-center">
-            <FileText className="mx-auto mb-2 w-10 h-10 text-orange-600" />
-            <h2 className="text-lg font-semibold">Step 1: Document Upload</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Each tenant uploads documents to their dedicated ADLS2 folder
-              (e.g., <code>/tenant_A</code>, <code>/tenant_B</code>).
-              Access is restricted via RBAC.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* --- API & SECURITY LAYER --- */}
+      <div className="col-span-12 mt-8">
+        <h2 className="text-lg font-semibold mb-2">API & Security Layer</h2>
+        <div className="flex flex-wrap gap-4">
+          <Card title="Azure API Management (APIM)" icon={<Lock />}>
+            <ul className="list-disc ml-4">
+              <li>Validates <code>Origin</code> + <code>tenantId</code></li>
+              <li>Issues short-lived JWTs (15–30 min)</li>
+              <li>Rejects non-browser (Postman/cURL) traffic</li>
+              <li>Rate limits per tenant / fingerprint</li>
+            </ul>
+          </Card>
+          <Arrow label="Validated request →" />
+          <Card title="Azure Functions (Serverless API)" icon={<Cpu />}>
+            <ul className="list-disc ml-4">
+              <li>Executes chat flow</li>
+              <li>Reads tenant config from <strong>static JSON</strong> in Function settings</li>
+              <li>Maps tenantId → allowed origins, model type, storage path</li>
+              <li>Applies <code>tenantId</code> filters to Search + ADLS</li>
+              <li>Streams responses via Web PubSub</li>
+            </ul>
+          </Card>
+        </div>
+      </div>
 
-      {/* 🟡 Step 2: Event-driven Ingestion */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-yellow-50 to-yellow-100">
-          <CardContent className="p-5 text-center">
-            <Settings className="mx-auto mb-2 w-10 h-10 text-yellow-600" />
-            <h2 className="text-lg font-semibold">Step 2: Event-driven Ingestion</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Azure Event Grid triggers Functions to process new files,
-              generate embeddings using Azure OpenAI, and store them in the
-              tenant’s vector index.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* --- DATA LAYER --- */}
+      <div className="col-span-12 mt-8">
+        <h2 className="text-lg font-semibold mb-2">Data & Intelligence Layer</h2>
+        <div className="flex flex-wrap gap-4">
+          <Card title="Tenant Config (Static JSON)" icon={<Database />}>
+            <ul className="list-disc ml-4">
+              <li>
+                Stored as <code>tenant-config.json</code> in Function App or Blob
+              </li>
+              <li>
+                Loaded at runtime (cached in memory)
+              </li>
+              <li>
+                Zero-cost config store for prototype
+              </li>
+              <li>
+                Future upgrade → Cosmos DB for dynamic multi-tenant scaling
+              </li>
+            </ul>
+          </Card>
+          <Card title="Azure AI Search" icon={<SearchIcon />}>
+            <ul className="list-disc ml-4">
+              <li>Single hybrid + vector index</li>
+              <li>Filter by <code>tenantId</code></li>
+              <li>RAG source for chat responses</li>
+            </ul>
+          </Card>
+          <Card title="Azure OpenAI" icon={<Cloud />}>
+            <ul className="list-disc ml-4">
+              <li><code>gpt-4o-mini</code> for chat</li>
+              <li><code>text-embedding-3-small</code> for vectors</li>
+              <li>Usage tracked via APIM telemetry</li>
+            </ul>
+          </Card>
+          <Card title="ADLS Gen2 (Storage)" icon={<Database />}>
+            <ul className="list-disc ml-4">
+              <li>Per-tenant folders</li>
+              <li>Event Grid → Durable Function pipeline for embeddings</li>
+              <li>Cached vectors → Cognitive Search</li>
+            </ul>
+          </Card>
+        </div>
+      </div>
 
-      {/* 🟢 Step 3: Vector Index Storage */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-green-50 to-green-100">
-          <CardContent className="p-5 text-center">
-            <Database className="mx-auto mb-2 w-10 h-10 text-green-600" />
-            <h2 className="text-lg font-semibold">Step 3: Vector Index Storage</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Tenant-specific embeddings are stored in Azure Cognitive Search or
-              a vector database. Each index remains isolated per tenant for
-              strict data separation.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* --- OBSERVABILITY --- */}
+      <div className="col-span-12 mt-8">
+        <h2 className="text-lg font-semibold mb-2">Observability & Governance</h2>
+        <div className="flex flex-wrap gap-4">
+          <Card title="App Insights + Log Analytics" icon={<RefreshCcw />}>
+            <ul className="list-disc ml-4">
+              <li>Logs with <code>tenantId</code>, <code>origin</code>, <code>fingerprint</code></li>
+              <li>Power BI dashboards for usage & costs</li>
+              <li>Alerts for spikes or errors</li>
+            </ul>
+          </Card>
+          <Card title="Azure Key Vault" icon={<Lock />}>
+            <ul className="list-disc ml-4">
+              <li>Holds JWT signing keys & SP secrets</li>
+              <li>Accessed via Managed Identity</li>
+              <li>Rotated every 90 days</li>
+            </ul>
+          </Card>
+        </div>
+      </div>
 
-      {/* 🔵 Step 4: API Orchestration */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.7 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-blue-50 to-blue-100">
-          <CardContent className="p-5 text-center">
-            <Settings className="mx-auto mb-2 w-10 h-10 text-blue-600" />
-            <h2 className="text-lg font-semibold">Step 4: API Orchestration</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Azure Functions or App Service routes chat requests by tenant ID,
-              retrieves relevant vectors, and queries Azure OpenAI for answers.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* ☁️ Step 5: Azure OpenAI Inference */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-sky-50 to-sky-100">
-          <CardContent className="p-5 text-center">
-            <Cloud className="mx-auto mb-2 w-10 h-10 text-sky-600" />
-            <h2 className="text-lg font-semibold">Step 5: Azure OpenAI Inference</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              A centralized Azure OpenAI service processes completions using
-              tenant-specific context, ensuring accurate and contextual answers.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* 💬 Step 6: Chat Response Delivery */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.9 }}
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-purple-50 to-purple-100">
-          <CardContent className="p-5 text-center">
-            <MessageSquare className="mx-auto mb-2 w-10 h-10 text-purple-600" />
-            <h2 className="text-lg font-semibold">Step 6: Chat Response Delivery</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              The chatbot UI (Web App or Teams App) delivers responses back to
-              the tenant’s users. Authentication and access are managed via
-              Azure AD B2C or Entra ID.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* 🔐 Security Layer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="lg:col-span-3"
-      >
-        <Card className="shadow-xl bg-gradient-to-br from-rose-50 to-rose-100">
-          <CardContent className="p-5 text-center">
-            <Lock className="mx-auto mb-2 w-10 h-10 text-rose-600" />
-            <h2 className="text-lg font-semibold">Security & Governance (All Steps)</h2>
-            <p className="text-gray-700 mt-2 text-sm leading-relaxed">
-              Managed Identities and Key Vault protect all secrets and credentials. 
-              Role-Based Access Control (RBAC) ensures strict per-tenant data isolation. 
-              Azure Monitor and Cost Management track resource usage and performance.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
+      {/* --- SECURITY NOTES --- */}
+      <div className="col-span-12 mt-8">
+        <h2 className="text-lg font-semibold mb-2">Security Boundaries</h2>
+        <p className="text-gray-600">
+          All requests authenticated via APIM. 
+          Tokens bound to <code>tenantId</code> and <code>origin</code>. 
+          Optional Auth Proxy for enterprise tenants. 
+          Private endpoints for Key Vault, Search, and Storage. 
+          CORS + reCAPTCHA protect against fake widget calls and API clients. 
+          Tenant config managed as static JSON during prototype stage, upgradable to Cosmos DB later.
+        </p>
+      </div>
     </div>
+  );
+}
+
+/* --- Helper Components --- */
+function Card({
+  title,
+  children,
+  icon,
+}: {
+  title: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="bg-white border rounded-2xl shadow-md p-4 w-[300px]"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        {icon && <span className="text-indigo-600">{icon}</span>}
+        <h3 className="font-semibold text-sm">{title}</h3>
+      </div>
+      {children}
+    </motion.div>
+  );
+}
+
+function Arrow({ label }: { label?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center text-gray-500">
+      <Send className="h-4 w-4" />
+      {label && <span className="text-[10px] mt-1">{label}</span>}
+    </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
   );
 }
